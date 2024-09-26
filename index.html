@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fast Food Orders</title>
+    <style>
+        /* Simple styling */
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        input[type="number"] { width: 50px; }
+        .item { margin-bottom: 10px; }
+        .orders { margin-top: 30px; }
+    </style>
+</head>
+<body>
+
+    <h1>Place Your Order</h1>
+    
+    <form id="orderForm">
+        <div>
+            <label for="name">Your Name:</label>
+            <input type="text" id="name" required>
+        </div>
+        
+        <h2>Menu</h2>
+        <div class="item">
+            <label for="shawarma">Shawarma ($5): </label>
+            <input type="number" id="shawarma" value="0" min="0">
+        </div>
+        <div class="item">
+            <label for="kebab">Kebab ($6): </label>
+            <input type="number" id="kebab" value="0" min="0">
+        </div>
+        <div class="item">
+            <label for="pepsi">Pepsi ($2): </label>
+            <input type="number" id="pepsi" value="0" min="0">
+        </div>
+
+        <button type="submit">Submit Order</button>
+    </form>
+
+    <div class="orders">
+        <h2>All Orders</h2>
+        <ul id="orderList">
+            <!-- Submitted orders will appear here -->
+        </ul>
+    </div>
+
+    <script>
+        const orderForm = document.getElementById('orderForm');
+        const orderList = document.getElementById('orderList');
+
+        // Helper function to format time as HH:MM AM/PM
+        function formatAMPM(date) {
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            return hours + ':' + minutes + ' ' + ampm;
+        }
+
+        // Function to check if it's a new day and reset orders
+        function checkForNewDay() {
+            const today = new Date().toLocaleDateString();
+            const savedDate = localStorage.getItem('orderDate');
+
+            // If the date has changed, reset the orders
+            if (savedDate !== today) {
+                localStorage.setItem('orderDate', today);
+                localStorage.setItem('orders', JSON.stringify([])); // Reset orders
+                loadOrders(); // Refresh the list
+            }
+        }
+
+        // Load orders from localStorage
+        function loadOrders() {
+            orderList.innerHTML = '';
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+            // Display each order
+            orders.forEach(order => {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${order.name} ordered: ${order.items} at ${order.timestamp}`;
+                orderList.appendChild(listItem);
+            });
+        }
+
+        // Save the new order to localStorage
+        function saveOrder(name, items, timestamp) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders.push({ name, items, timestamp });
+            localStorage.setItem('orders', JSON.stringify(orders));
+        }
+
+        // Handle form submission
+        orderForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // Get form data
+            const name = document.getElementById('name').value;
+            const shawarmaQty = document.getElementById('shawarma').value;
+            const kebabQty = document.getElementById('kebab').value;
+            const pepsiQty = document.getElementById('pepsi').value;
+
+            // Prepare order summary
+            let orderSummary = '';
+            if (shawarmaQty > 0) orderSummary += `${shawarmaQty} Shawarma, `;
+            if (kebabQty > 0) orderSummary += `${kebabQty} Kebab, `;
+            if (pepsiQty > 0) orderSummary += `${pepsiQty} Pepsi, `;
+
+            orderSummary = orderSummary.replace(/, $/, ''); // Remove last comma
+
+            // Add timestamp
+            const timestamp = formatAMPM(new Date());
+
+            // Save the order
+            saveOrder(name, orderSummary, timestamp);
+
+            // Update the display
+            loadOrders();
+
+            // Clear the form
+            orderForm.reset();
+        });
+
+        // On page load, check for new day and load orders
+        checkForNewDay();
+        loadOrders();
+
+    </script>
+
+</body>
+</html>
